@@ -29,8 +29,12 @@
   integrity="sha384-JRRwtUx7H7KUP+6uHPOfXcRuX+cvNXZdsqluYW0tiu2BNVwdJCEQwOcCqhbmGysx"></script>
 <script
   defer
+  src="/static/js/luxon/luxon.min.js?v={{ resources_version }}"
+  integrity="sha384-4HmTfKgI5bxGuWYP66hV51Q7S+CkAiqGkCxqnzlYIgBw8O0mhMWl4YVDO6u1E8+3"></script>
+<script
+  defer
   src="/static/js/editor.js?v={{ resources_version }}"
-  integrity="sha384-xt9scYxWGmhcdJpwYA9lYNt/8mxdb3xg3IAt3iJjrY5AH0IblEJMa1h2HMIJAZiI"></script>
+  integrity="sha384-e6g1xGnYQTH2onvd50pp8YUXzEYJHejUgX2K1jXxxSujmlvoUWjnc1PprZfk7hhz"></script>
 <script
   defer
   src="/static/js/moment/moment-with-locales.js?v={{ resources_version }}"
@@ -73,6 +77,12 @@ Edit untitled paste
         <span>{{ paste.visibility }}</span>
         <span>{{ paste.files | length }} {% if file_count == 1 %}file{% else %}files{% endif %}</span>
         <span class="timestamp" data-timestamp="{{ paste.created_at }}"></span>
+        {% if paste.expires %}
+        <span class="requires-js">
+          expires
+          <span class="timestamp" data-timestamp="{{ paste.expires }}"></span>
+        </span>
+        {% endif %}
       </div>
       <div class="left tabs">
         <ul>
@@ -90,72 +100,81 @@ Edit untitled paste
   <input type="hidden" name="_method" value="patch"/>
   <input type="hidden" name="anti_csrf_token" value="{{ session.data.anti_csrf_token }}"/>
   <div>
-    <div class="field is-grouped">
-      <div class="control is-expanded">
-        <label class="label">Paste name</label>
-        <input
-          name="name"
-          class="input"
-          type="text"
-          value="{% if form.name %}{{ form.name }}{% else %}{{ paste.name }}{% endif %}"
-          placeholder="Paste name"/>
-      </div>
-      <div class="control has-icons-left">
-        <label class="label">Visibility</label>
-        <div class="select">
-          <select name="visibility">
-            {# not having the ifs on a new line causes Tera to remove the space before selected #}
-            {% if form.visibility %}
-              {% set vis = form.visibility %}
-            {% else %}
-              {% set vis = paste.visibility %}
-            {% endif %}
-            <option
-              {% if vis == "public" %} selected{% endif %}>public</option>
-            <option
-              {% if vis == "unlisted" %} selected{% endif %}>unlisted</option>
-          {% if user %}
-            <option
-              {% if vis == "private" %} selected{% endif %}>private</option>
-          {% endif %}
-          </select>
-          <span class="icon is-small is-left">
-            <i class="fas fa-globe"></i>
-          </span>
+    <div class="columns">
+      <div class="column">
+        <div class="field">
+          <div class="control">
+            <label class="label">Paste name</label>
+            <input
+              name="name"
+              class="input"
+              type="text"
+              value="{% if form.name %}{{ form.name }}{% else %}{{ paste.name }}{% endif %}"
+              placeholder="Paste name"/>
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <label class="label">Description</label>
+            <input
+              name="description"
+              class="input"
+              type="text"
+              value="{% if form.description %}{{ form.description }}{% else %}{{ paste.description }}{% endif %}"
+              placeholder="Paste description"/>
+          </div>
         </div>
       </div>
-    </div>
-
-    <div class="field is-grouped">
-      <div class="control is-expanded">
-        <label class="label">Description</label>
-        <input
-          name="description"
-          class="input"
-          type="text"
-          value="{% if form.description %}{{ form.description }}{% else %}{{ paste.description }}{% endif %}"
-          placeholder="Paste description"/>
-      </div>
-      <div class="control has-icons-left requires-js">
-        <label class="label">Expires</label>
-        <div class="select">
-          <select id="expires">
-            <option
-              {% if not paste.expires %}selected{% endif %}>no</option>
-            <option>relative</option>
-            <option
-              {% if paste.expires %}selected{% endif %}>absolute</option>
-          </select>
-          <span class="icon is-small is-left">
-            <i class="fas fa-stopwatch"></i>
-          </span>
+      <div class="column is-narrow">
+        <div class="field">
+          <div class="control has-icons-left">
+            <label class="label">Visibility</label>
+            <div class="select is-fullwidth">
+              <select name="visibility">
+                {# not having the ifs on a new line causes Tera to remove the space before selected #}
+                {% if form.visibility %}
+                  {% set vis = form.visibility %}
+                {% else %}
+                  {% set vis = paste.visibility %}
+                {% endif %}
+                <option
+                  {% if vis == "public" %} selected{% endif %}>public</option>
+                <option
+                  {% if vis == "unlisted" %} selected{% endif %}>unlisted</option>
+              {% if user %}
+                <option
+                  {% if vis == "private" %} selected{% endif %}>private</option>
+              {% endif %}
+              </select>
+              <span class="icon is-small is-left">
+                <i class="fas fa-globe"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="control has-icons-left requires-js">
+            <label class="label">Expires</label>
+            <div class="select is-fullwidth">
+              <select id="expires">
+                <option
+                  {% if not paste.expires %}selected{% endif %}>no</option>
+                <option>relative</option>
+                <option
+                  {% if paste.expires %}selected{% endif %}>absolute</option>
+              </select>
+              <span class="icon is-small is-left">
+                <i class="fas fa-stopwatch"></i>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <div
       id="absolute-expiry"
-      class="requires-js{% if not paste.expires %} is-hidden{% endif %}"
+      class="{% if not paste.expires %}requires-js is-hidden{% else %}requires-js{% endif %}"
       {% if paste.expires %}data-expiration-date="{{ paste.expires }}"{% endif %}>
       <div class="field is-grouped">
         <div class="control">

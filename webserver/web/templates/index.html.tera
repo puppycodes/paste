@@ -26,8 +26,12 @@
   integrity="sha384-JRRwtUx7H7KUP+6uHPOfXcRuX+cvNXZdsqluYW0tiu2BNVwdJCEQwOcCqhbmGysx"></script>
 <script
   defer
+  src="/static/js/luxon/luxon.min.js?v={{ resources_version }}"
+  integrity="sha384-4HmTfKgI5bxGuWYP66hV51Q7S+CkAiqGkCxqnzlYIgBw8O0mhMWl4YVDO6u1E8+3"></script>
+<script
+  defer
   src="/static/js/editor.js?v={{ resources_version }}"
-  integrity="sha384-xt9scYxWGmhcdJpwYA9lYNt/8mxdb3xg3IAt3iJjrY5AH0IblEJMa1h2HMIJAZiI"></script>
+  integrity="sha384-e6g1xGnYQTH2onvd50pp8YUXzEYJHejUgX2K1jXxxSujmlvoUWjnc1PprZfk7hhz"></script>
 <script
   async
   src="/static/js/zxcvbn/zxcvbn.js?v={{ resources_version }}"
@@ -53,7 +57,7 @@ Create a new paste.
 {% block main %}
 <form id="paste_upload" action="/pastes" method="post">
   <input type="hidden" name="anti_csrf_token" value="{{ session.data.anti_csrf_token }}"/>
-  <div class="columns"> <!-- TODO: remove margin-bottom on this -->
+  <div class="columns">
     <div class="column">
       <div class="field">
         <div class="control is-expanded">
@@ -82,7 +86,7 @@ Create a new paste.
       <div class="field is-grouped">
         <div class="control has-icons-left">
           <label class="label">Visibility</label>
-          <div class="select">
+          <div class="select is-fullwidth">
             <select name="visibility">
               <option
                 {% if form.visibility and form.visibility == "public" %}selected{% endif %}>public</option>
@@ -98,24 +102,33 @@ Create a new paste.
             </span>
           </div>
         </div>
-        <div class="control has-icons-left requires-js">
-          <label class="label">Expires</label>
-          <div class="select">
-            <select id="expires">
-              <option selected>no</option>
-              <option>relative</option>
-              <option>absolute</option>
-            </select>
-            <span class="icon is-small is-left">
-              <i class="fas fa-stopwatch"></i>
-            </span>
+        <div class="control requires-js">
+          <div class="label-icon">
+            <label class="label">Expires</label>
+            <a href="https://github.com/jkcclemens/paste/wiki/Expiring-pastes" target="_blank">
+              <span class="icon is-small is-right">
+                <i class="fas fa-question-circle"></i>
+              </span>
+            </a>
+          </div>
+          <div class="control has-icons-left">
+            <div class="select is-fullwidth">
+              <select id="expires">
+                <option selected>no</option>
+                <option>relative</option>
+                <option>absolute</option>
+              </select>
+              <span class="icon is-small is-left">
+                <i class="fas fa-stopwatch"></i>
+              </span>
+            </div>
           </div>
         </div>
       </div>
       <div class="field">
         <div class="control has-icons-left requires-js">
           <label class="label">Encrypted</label>
-          <div class="select" id="encrypted">
+          <div class="select is-fullwidth" id="encrypted">
             <select>
               <option value="no" selected>no</option>
               <option value="yes">yes</option>
