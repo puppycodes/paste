@@ -71,6 +71,12 @@ fn post(paste: Form<PasteUpload>, user: OptionalWebUser, mut sess: Session, conn
     Some(paste.description)
   };
 
+  let password = if paste.password.is_empty() {
+    None
+  } else {
+    Some(paste.password)
+  };
+
   let files = files
     .into_iter()
     .map(|f| FilePayload {
@@ -83,6 +89,7 @@ fn post(paste: Form<PasteUpload>, user: OptionalWebUser, mut sess: Session, conn
   let pp = PastePayload {
     name,
     description,
+    password,
     visibility: paste.visibility,
     expires: paste.expires.map(|x| x.into_inner()),
     author: user.as_ref(),
@@ -124,6 +131,7 @@ struct PasteUpload {
   visibility: Visibility,
   description: String,
   expires: Option<FormDate>,
+  password: String,
   #[serde(skip)]
   file_name: String,
   #[serde(skip)]

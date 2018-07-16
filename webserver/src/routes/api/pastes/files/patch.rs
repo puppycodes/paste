@@ -117,7 +117,8 @@ pub fn patch(paste_id: PasteId, info: UpdateResult, user: RequiredUser, conn: Db
       // adding file
       None => {
         let content = file.content.unwrap_set();
-        paste.create_file(&conn, file.name, file.highlight_language.set(), content)?;
+        // FIXME: have to accept plaintext pw here now
+        paste.create_file(&conn, file.name, file.highlight_language.set(), None::<String>, content)?;
       },
     }
   }

@@ -101,9 +101,10 @@ fn users_username_id(username: String, id: PasteId, config: State<Config>, user:
     return Ok(Rst::Status(status));
   }
 
+  let get_content = paste.password().is_none();
   let files: Vec<OutputFile> = id.files(&conn)?
     .iter()
-    .map(|x| x.as_output_file(true, &paste))
+    .map(|x| x.as_output_file(get_content, &paste))
     .collect::<result::Result<_, _>>()?;
 
   let mut rendered: HashMap<FileId, Option<String>> = HashMap::with_capacity(files.len());
@@ -139,6 +140,7 @@ fn users_username_id(username: String, id: PasteId, config: State<Config>, user:
     paste.visibility(),
     paste.created_at(),
     paste.expires(),
+    None::<String>, // no reason to include password hash, even though serde skips it
     None,
     files,
   );
@@ -155,6 +157,10 @@ fn users_username_id(username: String, id: PasteId, config: State<Config>, user:
   ctx["deletion_key"] = json!(sess.data.remove("deletion_key"));
   ctx["is_owner"] = json!(is_owner);
   ctx["author_name"] = json!(author_name);
+
+  if paste.password().is_some() {
+    return Ok(Rst::Template(Template::render("paste/encrypted", ctx)));
+  }
 
   Ok(Rst::Template(Template::render("paste/index", ctx)))
 }
@@ -216,6 +222,7 @@ fn edit(username: String, id: PasteId, config: State<Config>, user: OptionalWebU
     paste.visibility(),
     paste.created_at(),
     paste.expires(),
+    paste.password(),
     None,
     files,
   );

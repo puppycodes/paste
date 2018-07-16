@@ -235,7 +235,8 @@ fn patch(update: LenientForm<PasteUpdate>, username: String, paste_id: PasteId, 
           Some(file.name)
         };
         let content = Content::Text(file.content);
-        paste.create_file(&conn, name, file.language, content)?;
+        // FIXME: have to accept plaintext pw here now
+        paste.create_file(&conn, name, file.language, None::<String>, content)?;
       },
     }
   }

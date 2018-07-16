@@ -48,6 +48,7 @@ fn post(info: InfoResult, user: OptionalUser, conn: DbConn, sidekiq: State<Sidek
     description: info.metadata.description.map(|x| x.into_inner()),
     visibility: info.metadata.visibility,
     expires: info.metadata.expires,
+    password: info.metadata.password,
     author: user.as_ref(),
     files,
   };
@@ -84,6 +85,7 @@ fn post(info: InfoResult, user: OptionalUser, conn: DbConn, sidekiq: State<Sidek
     paste.visibility(),
     paste.created_at(),
     paste.expires(),
+    paste.password(),
     deletion_key.map(|x| x.key()),
     files,
   );

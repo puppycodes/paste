@@ -69,6 +69,7 @@ table! {
         description -> Nullable<Text>,
         created_at -> Timestamp,
         expires -> Nullable<Timestamp>,
+        password -> Nullable<Text>,
     }
 }
 

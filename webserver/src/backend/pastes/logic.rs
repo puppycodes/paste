@@ -6,6 +6,7 @@ use models::paste::Visibility;
 use sidekiq_::Job;
 use store::Store;
 use super::models::{PastePayload, CreateSuccess, CreateError};
+use utils::HashedPassword;
 
 use chrono::Utc;
 
@@ -72,6 +73,12 @@ impl<'a> PastePayload<'a> {
       }
     }
 
+    if let Some(ref password) = self.password {
+      if password.is_empty() {
+        return Err(CreateError::EmptyPassword);
+      }
+    }
+
     if self.files.iter().any(|x| x.content.is_empty()) {
       return Err(CreateError::EmptyFile);
     }
@@ -101,6 +108,7 @@ impl<'a> PastePayload<'a> {
       self.author.map(|x| x.id()),
       None,
       self.expires.map(|x| x.naive_utc()),
+      self.password.as_ref().map(|x| HashedPassword::from(x).into_string()),
     );
 
     let paste: Paste = diesel::insert_into(pastes::table)
@@ -122,7 +130,7 @@ impl<'a> PastePayload<'a> {
 
     let mut files = Vec::with_capacity(self.files.len());
     for file in self.files {
-      let f = paste.create_file(conn, file.name, file.highlight_language, file.content)
+      let f = paste.create_file(conn, file.name, file.highlight_language, self.password.as_ref(), file.content)
         .map_err(|e| CreateError::Internal(e.into()))?;
       files.push(f);
     }

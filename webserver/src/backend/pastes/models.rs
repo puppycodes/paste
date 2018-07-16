@@ -15,6 +15,7 @@ pub struct PastePayload<'u> {
   pub description: Option<String>,
   pub visibility: Visibility,
   pub expires: Option<DateTime<Utc>>,
+  pub password: Option<String>,
   pub author: Option<&'u User>,
   pub files: Vec<FilePayload>,
 }
@@ -43,6 +44,7 @@ pub enum CreateError {
   FileNameTooLong,
   EmptyFile,
   PastExpirationDate,
+  EmptyPassword,
   Internal(Error),
 }
 
@@ -61,6 +63,7 @@ impl BackendError for CreateError {
       CreateError::FileNameTooLong => "file name must be less than or equal to 255 characters",
       CreateError::EmptyFile => "file content must not be empty",
       CreateError::PastExpirationDate => "paste expiry date cannot be in the past",
+      CreateError::EmptyPassword => "if specified, a paste password cannot be empty",
     };
 
     Ok(m)

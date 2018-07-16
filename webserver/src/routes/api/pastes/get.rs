@@ -54,6 +54,7 @@ fn _get_all(query: Option<AllQuery>, conn: DbConn) -> RouteResult<Vec<AllPaste>>
         description: x.description().map(Into::into),
         visibility: x.visibility(),
         expires: x.expires(),
+        password: x.password().map(Into::into),
         created_at: Some(x.created_at()),
       },
     })
@@ -112,6 +113,7 @@ fn _get(id: PasteId, query: Option<Query>, user: OptionalUser, conn: DbConn) -> 
     paste.visibility(),
     paste.created_at(),
     paste.expires(),
+    None::<String>, // no reason to include password hash, even though serde skips it
     None,
     files,
   );

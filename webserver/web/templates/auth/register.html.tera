@@ -13,7 +13,7 @@
 <script
   defer
   src="/static/js/password.js?v={{ resources_version }}"
-  integrity="sha384-tL5ypIrbIEhvrepZk11xXDk5aNIUPZZQsGvFNVPIcEQ0asgZwGzXKtN9vGdxEvrp"></script>
+  integrity="sha384-FDh4pexdv/ALozDo2nLTA9BVddp7baFE5dSjLB11MwyRWul0Ubu4mVCoVA64zGOh"></script>
 <script
   defer
   src="/static/js/recaptcha/config.js?v={{ resources_version }}"

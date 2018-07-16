@@ -34,6 +34,7 @@ pub fn post(paste_id: PasteId, file: UpdateResult, user: RequiredUser, conn: DbC
     &conn,
     file.name.map(|x| x.to_string()),
     file.highlight_language,
+    None::<String>, // FIXME: have to accept plaintext pw here now
     file.content
   )?;
 

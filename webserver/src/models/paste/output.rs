@@ -17,7 +17,7 @@ pub struct Output {
 }
 
 impl Output {
-  pub fn new<N, D, F>(
+  pub fn new<N, D, F, P>(
     paste_id: PasteId,
     author: Option<OutputAuthor>,
     name: Option<N>,
@@ -25,11 +25,13 @@ impl Output {
     vis: Visibility,
     created_at: DateTime<Utc>,
     expires: Option<DateTime<Utc>>,
+    password: Option<P>,
     deletion_key: Option<DeletionKeyId>,
     files: F,
   ) -> Self
     where N: AsRef<str>,
           D: AsRef<str>,
+          P: Into<String>,
           F: IntoIterator<Item = OutputFile>,
   {
     Output {
@@ -41,6 +43,7 @@ impl Output {
           description: desc.map(|x| x.as_ref().to_string().into()),
           visibility: vis,
           expires,
+          password: password.map(Into::into),
           created_at: Some(created_at),
         },
         files: Vec::new(),

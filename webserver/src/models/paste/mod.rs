@@ -40,6 +40,8 @@ pub struct Metadata {
   #[serde(skip_deserializing)]
   pub created_at: Option<DateTime<Utc>>,
   pub expires: Option<DateTime<Utc>>,
+  #[serde(skip_serializing, default)]
+  pub password: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]

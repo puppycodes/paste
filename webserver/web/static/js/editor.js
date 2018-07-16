@@ -455,6 +455,22 @@ var pasteEditors = {};
   setTimezone();
 
   (function () {
+    var encrypted = document.getElementById('encrypted');
+    if (encrypted === null) {
+      return;
+    }
+    encrypted.addEventListener('change', function (e) {
+      var val = e.target.value;
+      var info = document.getElementById('encryption-info');
+      if (val === 'yes') {
+        info.classList.remove('is-hidden');
+      } else {
+        info.classList.add('is-hidden');
+      }
+    });
+  })();
+
+  (function () {
     var expires = document.getElementById('expires');
     if (expires === null) {
       return;

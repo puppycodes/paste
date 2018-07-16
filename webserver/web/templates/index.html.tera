@@ -27,7 +27,15 @@
 <script
   defer
   src="/static/js/editor.js?v={{ resources_version }}"
-  integrity="sha384-SHFlU9QE3+FRoi8q9jTyG9xMhWLSRe3OmMN0aq7GLEG3O2WMScLXEGnPPxPkwRsY"></script>
+  integrity="sha384-xt9scYxWGmhcdJpwYA9lYNt/8mxdb3xg3IAt3iJjrY5AH0IblEJMa1h2HMIJAZiI"></script>
+<script
+  async
+  src="/static/js/zxcvbn/zxcvbn.js?v={{ resources_version }}"
+  integrity="sha384-jhGcGHNZytnBnH1wbEM3KxJYyRDy9Q0QLKjE65xk+aMqXFCdvFuYIjzMWAAWBBtR"></script>
+<script
+  defer
+  src="/static/js/password.js?v={{ resources_version }}"
+  integrity="sha384-FDh4pexdv/ALozDo2nLTA9BVddp7baFE5dSjLB11MwyRWul0Ubu4mVCoVA64zGOh"></script>
 {% endblock head %}
 
 {% block title %}
@@ -45,57 +53,78 @@ Create a new paste.
 {% block main %}
 <form id="paste_upload" action="/pastes" method="post">
   <input type="hidden" name="anti_csrf_token" value="{{ session.data.anti_csrf_token }}"/>
-  <div class="field is-grouped">
-    <div class="control is-expanded">
-      <label class="label">Paste name</label>
-      <input
-        name="name"
-        class="input"
-        type="text"
-        {% if form.name %}value="{{ form.name }}"{% endif %}
-        placeholder="Paste name"/>
-    </div>
-    <div class="control has-icons-left">
-      <label class="label">Visibility</label>
-      <div class="select">
-        <select name="visibility">
-          <option
-            {% if form.visibility and form.visibility == "public" %}selected{% endif %}>public</option>
-          <option
-            {% if not form.visibility or form.visibility == "unlisted" %} selected{% endif %}>unlisted</option>
-        {% if user %}
-          <option
-            {% if form.visibility and form.visibility == "private" %}selected{% endif %}>private</option>
-        {% endif %}
-        </select>
-        <span class="icon is-small is-left">
-          <i class="fas fa-globe"></i>
-        </span>
+  <div class="columns"> <!-- TODO: remove margin-bottom on this -->
+    <div class="column">
+      <div class="field">
+        <div class="control is-expanded">
+          <label class="label">Paste name</label>
+          <input
+            name="name"
+            class="input"
+            type="text"
+            {% if form.name %}value="{{ form.name }}"{% endif %}
+            placeholder="Paste name"/>
+        </div>
+      </div>
+      <div class="field">
+        <div class="control is-expanded">
+          <label class="label">Description</label>
+          <input
+            name="description"
+            class="input"
+            type="text"
+            {% if form.description %}value="{{ form.description }}"{% endif %}
+            placeholder="Paste description"/>
+        </div>
       </div>
     </div>
-  </div>
-
-  <div class="field is-grouped">
-    <div class="control is-expanded">
-      <label class="label">Description</label>
-      <input
-        name="description"
-        class="input"
-        type="text"
-        {% if form.description %}value="{{ form.description }}"{% endif %}
-        placeholder="Paste description"/>
-    </div>
-    <div class="control has-icons-left requires-js">
-      <label class="label">Expires</label>
-      <div class="select">
-        <select id="expires">
-          <option selected>no</option>
-          <option>relative</option>
-          <option>absolute</option>
-        </select>
-        <span class="icon is-small is-left">
-          <i class="fas fa-stopwatch"></i>
-        </span>
+    <div class="column is-narrow">
+      <div class="field is-grouped">
+        <div class="control has-icons-left">
+          <label class="label">Visibility</label>
+          <div class="select">
+            <select name="visibility">
+              <option
+                {% if form.visibility and form.visibility == "public" %}selected{% endif %}>public</option>
+              <option
+                {% if not form.visibility or form.visibility == "unlisted" %} selected{% endif %}>unlisted</option>
+            {% if user %}
+              <option
+                {% if form.visibility and form.visibility == "private" %}selected{% endif %}>private</option>
+            {% endif %}
+            </select>
+            <span class="icon is-small is-left">
+              <i class="fas fa-globe"></i>
+            </span>
+          </div>
+        </div>
+        <div class="control has-icons-left requires-js">
+          <label class="label">Expires</label>
+          <div class="select">
+            <select id="expires">
+              <option selected>no</option>
+              <option>relative</option>
+              <option>absolute</option>
+            </select>
+            <span class="icon is-small is-left">
+              <i class="fas fa-stopwatch"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="control has-icons-left requires-js">
+          <label class="label">Encrypted</label>
+          <div class="select" id="encrypted">
+            <select>
+              <option value="no" selected>no</option>
+              <option value="yes">yes</option>
+            </select>
+            <span class="icon is-small is-left">
+              <i class="fas fa-lock"></i>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -179,6 +208,41 @@ Create a new paste.
         <label class="label">Minutes</label>
         <input id="relative-minutes" class="input" type="number" min="0" max="59" value="0"/>
       </div>
+    </div>
+  </div>
+
+  <div id="encryption-info" class="requires-js is-hidden">
+    <p>
+      Note that only file contents are encrypted. The paste title and description remain plaintext.
+    </p>
+    <div class="field">
+      <label class="label">Password</label>
+      <div class="field has-addons">
+        <div class="control is-expanded has-icons-left">
+          <input
+            id="password"
+            name="password"
+            class="input"
+            type="password"
+            minlength="1"
+            placeholder="Something really secure, please <3"/>
+          <span class="icon is-small is-left">
+            <i class="fas fa-asterisk"></i>
+          </span>
+        </div>
+        <div class="control">
+          <a name="password_reveal" class="button">
+            <span class="icon is-small">
+              <i class="fas fa-eye"></i>
+            </span>
+          </a>
+        </div>
+      </div>
+      <p class="help">
+        <progress id="strength_progress" class="password progress is-marginless is-danger" value="100" max="100"></progress>
+        <span id="strength"></span>
+        <span id="strength_warning" class="has-text-warning"></span>
+      </p>
     </div>
   </div>
 

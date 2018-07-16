@@ -1,0 +1,219 @@
+{% extends "base" %}
+
+{% block head %}
+{{ super() }}
+{% if paste.visibility != "public" %}
+<meta name="robots" content="noindex, nofollow"/>
+{% endif %}
+<link
+  title="dark"
+  rel="stylesheet alternate"
+  href="/static/css/highlightjs/atom-one-dark.min.css?v={{ resources_version }}"
+  integrity="sha384-nyXucUVWQWGGNq3mSgG/FGxW4Jmsv+0uCbHZ0VpHRsGZt/PlUT31hz9sUek822eI"/>
+<link
+  title="light"
+  rel="stylesheet"
+  href="/static/css/highlightjs/atom-one-light.min.css?v={{ resources_version }}"
+  integrity="sha384-7gDLYK0oyPpfkc6E6VzcNFzEFGw6QTKMoof6r0lb0cWECaHXX+b2GGxhh0iItikh"/>
+<script
+  defer
+  src="/static/js/paste.js?v={{ resources_version }}"
+  integrity="sha384-SQgdHK5p4bbCVoMh3OtJgE2uoJA9cccAch1XboKUcxb5+JjmWdmVGnmsd7Xy2O6s"></script>
+<script
+  defer
+  src="/static/js/highlightjs/highlight.pack.js?v={{ resources_version }}"
+  integrity="sha384-JRRwtUx7H7KUP+6uHPOfXcRuX+cvNXZdsqluYW0tiu2BNVwdJCEQwOcCqhbmGysx"></script>
+<script
+  defer
+  src="/static/js/highlightjs-line-numbers/highlightjs-line-numbers.js?v={{ resources_version }}"
+  integrity="sha384-FCZ1PyUseHnXo4+1fCfTp/7wM8gulH0POMyk16XGumx7X7Roa1hWUxtXCmJfjHFQ"></script>
+<script
+  defer
+  src="/static/js/highlight.js?v={{ resources_version }}"
+  integrity="sha384-eJ6Y8W5G6M3LfKNuE3SrYMoCYOOTR/ty2Xg+sehkCcB3MKynzx7emEKdcvEpArQK"></script>
+<script
+  defer
+  src="/static/js/moment/moment-with-locales.js?v={{ resources_version }}"
+  integrity="sha384-5zARgXuvMiKGWrda+raHXOlTw717huPS47iQABU10DXHGQJ+7PE/PPghBZSmzaNU"></script>
+<script
+  defer
+  src="/static/js/timestamps.js?v={{ resources_version }}"
+  integrity="sha384-nvZWXhPMbi0ixdPLjUPfx2htsDNlNiypOV+5mX4XOwbZ2aDQjY7yw5Jd2HSf9cUr"></script>
+<script
+  defer
+  src="/static/js/password.js?v={{ resources_version }}"
+  integrity="sha384-FDh4pexdv/ALozDo2nLTA9BVddp7baFE5dSjLB11MwyRWul0Ubu4mVCoVA64zGOh"></script>
+{% endblock head %}
+
+{% block title %}
+  {% if paste.name %}
+{{ paste.name }}
+  {% else %}
+untitled paste
+  {% endif %}
+{% endblock title %}
+
+{% block header %}
+<section class="hero is-dark">
+  <div class="paste hero-body">
+    <div class="paste container">
+      <div class="right">
+        <div class="field">
+          {% if not paste.author or is_owner %}
+          <div class="control">
+            <button class="button is-danger is-large opens-modal">
+              <span class="icon is-large">
+                <i class="fas fa-trash-alt"></i>
+              </span>
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="left">
+        <h1 class="title">
+        {% if paste.name %}
+          <span class="keeps-spaces">{{ paste.name }}</span>
+        {% else %}
+          <em>untitled paste</em>
+        {% endif %}
+        </h1>
+        {% if paste.description %}
+        <h2 class="subtitle">
+          <span class="keeps-spaces">{{ paste.description }}</span>
+        </h2>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="hero-foot">
+    <div class="paste container">
+      {% set file_count = paste.files | length %}
+      <div class="right paste info">
+        <span>{{ paste.visibility }}</span>
+        <span>{{ paste.files | length }} {% if file_count == 1 %}file{% else %}files{% endif %}</span>
+        <span class="timestamp" data-timestamp="{{ paste.created_at }}"></span>
+        {% if paste.expires %}
+        <span class="requires-js">
+          expires
+          <span class="timestamp" data-timestamp="{{ paste.expires }}"></span>
+        </span>
+        {% endif %}
+      </div>
+      <div class="left tabs">
+        <ul>
+          <li class="is-active"><a href="/p/{{ author_name | urlencode(safe="") }}/{{ paste.id }}">files</a></li>
+          <li><a href="/p/{{ author_name | urlencode(safe="") }}/{{ paste.id }}/revisions">revisions <span class="right tag">{{ num_commits }}</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock header %}
+
+{% block main %}
+{% if not paste.author or is_owner %}
+<div id="deletion_modal" class="modal">
+  <form id="deletion_form" action="/p/{{ author_name | urlencode(safe="") }}/{{ paste.id }}" method="post">
+    <input type="hidden" name="_method" value="delete"/>
+    <input type="hidden" name="anti_csrf_token" value="{{ session.data.anti_csrf_token }}"/>
+    <div class="modal-background closes-modal"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Delete paste</p>
+        <button class="delete closes-modal" aria-label="close" type="button"></button>
+      </header>
+      <section class="modal-card-body">
+      {% if not paste.author %}
+        <div class="content">
+          <p>
+            To delete an anonymous paste, you need to use its deletion key. Enter it below and click
+            "Delete" to delete this paste.
+          </p>
+        </div>
+        <input
+          required
+          id="deletion_key_input"
+          data-paste-id="{{ paste.id }}"
+          name="key"
+          type="text"
+          autocorrect="off"
+          autocapitalize="off"
+          class="input"
+          placeholder="Deletion key"/>
+      {% endif %}
+      {% if is_owner %}
+        <div class="content">
+          <p>
+            Please confirm you would like to delete this paste.
+          </p>
+        </div>
+      {% endif %}
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-danger" type="submit">Delete</button>
+      </footer>
+    </div>
+  </form>
+</div>
+{% endif %}
+{% if deletion_key %}
+<div class="message is-info">
+  <p class="message-header">
+    Deletion key
+    <button class="delete" aria-label="delete"></button>
+  </p>
+  <div class="message-body">
+    <p>
+      In order to delete this paste, you will need to use the key below. This message will only
+      appear once.
+    </p>
+    <p>
+      Note that this key is saved on <em>this browser only</em> for 30 days. If you clear the cache,
+      the key will be lost.
+    </p>
+    <p>
+      <code id="deletion_key" data-paste-id="{{ paste.id }}">{{ deletion_key }}</code>
+    </p>
+  </div>
+</div>
+{% endif %}
+
+<div class="content">
+  <h1 class="title">Encrypted paste</h2>
+  <p>
+    This paste is encrypted. In order to view its contents, you'll need to provide the correct
+    password.
+  </p>
+</div>
+<form class="form">
+  <div class="field has-addons">
+    <div class="control is-expanded has-icons-left">
+      <input
+        type="password"
+        class="input"
+        placeholder="Paste password"
+        minlength="1"
+        required/>
+      <span class="icon is-small is-left">
+        <i class="fas fa-asterisk"></i>
+      </span>
+    </div>
+    <div class="control">
+      <a name="password_reveal" class="button">
+        <span class="icon is-small">
+          <i class="fas fa-eye"></i>
+        </span>
+      </a>
+    </div>
+  </div>
+  <div class="field">
+    <div class="control">
+      <button class="button is-primary">
+        Decrypt
+      </button>
+    </div>
+  </div>
+</form>
+
+{% endblock main %}

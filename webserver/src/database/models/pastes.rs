@@ -22,6 +22,9 @@ use rocket::http::Status as HttpStatus;
 
 use sidekiq::{Client as SidekiqClient, Value};
 
+use sodiumoxide::crypto::pwhash::{self, HashedPassword, Salt, derive_key, pwhash_verify};
+use sodiumoxide::crypto::secretbox::{self, Key};
+
 use uuid::Uuid;
 
 use std::fs::{self, File};
@@ -39,6 +42,7 @@ pub struct Paste {
   description: Option<String>,
   created_at: NaiveDateTime,
   expires: Option<NaiveDateTime>,
+  password: Option<String>,
 }
 
 impl Paste {
@@ -84,6 +88,26 @@ impl Paste {
 
   pub fn set_expires(&mut self, expires: Option<DateTime<Utc>>) {
     self.expires = expires.map(|x| x.naive_utc());
+  }
+
+  pub fn password(&self) -> Option<&str> {
+    self.password.as_ref().map(|x| x.as_str())
+  }
+
+  pub fn set_hashed_password(&mut self, password: Option<String>) {
+    // FIXME: rekey files
+    self.password = password;
+  }
+
+  pub fn check_password(&self, pass: &str) -> bool {
+    let password = match self.password {
+      Some(ref p) => p,
+      None => return false,
+    };
+    let mut stored_bytes = password.clone().into_bytes();
+    stored_bytes.push(0);
+    let hash = HashedPassword::from_slice(&stored_bytes).expect("hashed password");
+    pwhash_verify(&hash, pass.as_bytes())
   }
 
   pub fn update(&mut self, conn: &DbConn, sidekiq: &SidekiqClient, update: &MetadataUpdate) -> Result<()> {
@@ -230,7 +254,24 @@ impl Paste {
     Ok(count)
   }
 
-  pub fn create_file<S: AsRef<str>>(&self, conn: &DbConn, name: Option<S>, lang: Option<Language>, content: Content) -> Result<DbFile> {
+  fn key(&self, password: &str) -> Option<Key> {
+    let self_pass = self.password.as_ref()?;
+    let salt = Salt::from_slice(&self_pass.as_bytes()[..pwhash::SALTBYTES])?;
+    let mut key = Key([0; secretbox::KEYBYTES]);
+    {
+      let Key(ref mut bytes) = key;
+      derive_key(
+        bytes,
+        password.as_bytes(),
+        &salt,
+        pwhash::OPSLIMIT_INTERACTIVE,
+        pwhash::MEMLIMIT_INTERACTIVE,
+      ).ok()?;
+    }
+    Some(key)
+  }
+
+  pub fn create_file<S: AsRef<str>, P: AsRef<str>>(&self, conn: &DbConn, name: Option<S>, lang: Option<Language>, password: Option<P>, content: Content) -> Result<DbFile> {
     // generate file id
     let id = FileId(Uuid::new_v4());
 
@@ -240,7 +281,17 @@ impl Paste {
     // create file on the system
     let file_path = self.files_directory().join(id.simple().to_string());
     let mut f = File::create(file_path)?;
-    f.write_all(&content.into_bytes())?;
+
+    match password {
+      Some(p) => {
+        let key = self.key(p.as_ref()).unwrap(); // FIXME
+        let nonce = secretbox::gen_nonce();
+        let data = secretbox::seal(&content.into_bytes(), &nonce, &key);
+        f.write_all(&nonce[..])?;
+        f.write_all(&data)?;
+      },
+      None => f.write_all(&content.into_bytes())?,
+    }
 
     let name = name
       .map(|s| s.as_ref().to_string()) // get a String
@@ -285,6 +336,7 @@ pub struct NewPaste {
   description: Option<String>,
   created_at: NaiveDateTime,
   expires: Option<NaiveDateTime>,
+  password: Option<String>,
 }
 
 impl NewPaste {
@@ -296,8 +348,9 @@ impl NewPaste {
     author_id: Option<UserId>,
     created_at: Option<NaiveDateTime>,
     expires: Option<NaiveDateTime>,
+    password: Option<String>,
   ) -> Self {
     let created_at = created_at.unwrap_or_else(|| Utc::now().naive_utc());
-    NewPaste { id, name, visibility, author_id, description, created_at, expires }
+    NewPaste { id, name, visibility, author_id, description, created_at, expires, password }
   }
 }

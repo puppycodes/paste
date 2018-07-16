@@ -11,9 +11,17 @@
     }
   }
 
-  document.getElementById('password_verify').addEventListener('input', function (e) {
-    return checkMatch(document.getElementById('password'), e.target);
-  });
+  (function () {
+    var password = document.getElementById('password');
+    var verify = document.getElementById('password_verify');
+    if (password === null || verify === null) {
+      return;
+    }
+
+    verify.addEventListener('input', function (e) {
+      return checkMatch(password, e.target);
+    });
+  })();
 
   function doHides(pw, strength) {
     if (pw.value.length === 0) {
@@ -69,20 +77,23 @@
   })();
 
   function passwordStrength(pw) {
-    checkMatch(pw, document.getElementById('password_verify'));
+    var verify = document.getElementById('password_verify');
+    if (verify !== null) {
+      checkMatch(pw, verify);
+    }
 
     var values = [];
     {
       var name = document.getElementById('name');
-      if (name) {
+      if (name !== null) {
         values.push(name.value);
       }
       var username = document.getElementById('username');
-      if (username) {
+      if (username !== null) {
         values.push(username.value);
       }
       var email = document.getElementById('email');
-      if (email) {
+      if (email !== null) {
         values.push(email.value);
       }
     }
@@ -91,6 +102,10 @@
     var strength = document.getElementById('strength');
     var progress = document.getElementById('strength_progress');
     var warning = document.getElementById('strength_warning');
+
+    if (strength === null || progress === null || warning === null) {
+      return;
+    }
 
     if (pw.getAttribute('data-bar') === 'hidden') {
       doHides(pw, progress);
@@ -138,8 +153,14 @@
     progress.classList.add(color);
   }
 
-  document.getElementById('password').addEventListener('input', function (e) {
-    return passwordStrength(e.target);
-  });
+  (function () {
+    var pw = document.getElementById('password');
+    if (pw === null) {
+      return;
+    }
+    pw.addEventListener('input', function (e) {
+      return passwordStrength(e.target);
+    });
+  })();
 })();
 //# sourceMappingURL=password.js.map

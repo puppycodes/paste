@@ -9,9 +9,15 @@
     }
   }
 
-  document
-    .getElementById('password_verify')
-    .addEventListener('input', e => checkMatch(document.getElementById('password'), e.target));
+  (function() {
+    const password = document.getElementById('password');
+    const verify = document.getElementById('password_verify');
+    if (password === null || verify === null) {
+      return;
+    }
+
+    verify.addEventListener('input', e => checkMatch(password, e.target));
+  })();
 
   function doHides(pw, strength) {
     if (pw.value.length === 0) {
@@ -41,20 +47,23 @@
   })();
 
   function passwordStrength(pw) {
-    checkMatch(pw, document.getElementById('password_verify'));
+    const verify = document.getElementById('password_verify');
+    if (verify !== null) {
+      checkMatch(pw, verify);
+    }
 
     const values = [];
     {
       const name = document.getElementById('name');
-      if (name) {
+      if (name !== null) {
         values.push(name.value);
       }
       const username = document.getElementById('username');
-      if (username) {
+      if (username !== null) {
         values.push(username.value);
       }
       const email = document.getElementById('email');
-      if (email) {
+      if (email !== null) {
         values.push(email.value);
       }
     }
@@ -63,6 +72,10 @@
     const strength = document.getElementById('strength');
     const progress = document.getElementById('strength_progress');
     const warning = document.getElementById('strength_warning');
+
+    if (strength === null || progress === null || warning === null) {
+      return;
+    }
 
     if (pw.getAttribute('data-bar') === 'hidden') {
       doHides(pw, progress);
@@ -110,5 +123,11 @@
     progress.classList.add(color);
   }
 
-  document.getElementById('password').addEventListener('input', e => passwordStrength(e.target));
+  (function() {
+    const pw = document.getElementById('password');
+    if (pw === null) {
+      return;
+    }
+    pw.addEventListener('input', e => passwordStrength(e.target));
+  })();
 })();
