@@ -44,7 +44,7 @@ fn get(username: String, id: PasteId, config: State<Config>, user: OptionalWebUs
 
   let files: Vec<OutputFile> = id.files(&conn)?
     .iter()
-    .map(|x| x.as_output_file(false, &paste))
+    .map(|x| x.as_output_file(false, &paste, None))
     .collect::<result::Result<_, _>>()?;
 
   let repo = Repository::open(paste.files_directory())?;

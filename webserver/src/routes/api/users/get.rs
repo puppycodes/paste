@@ -90,7 +90,7 @@ fn _get(page: u32, username: String, user: OptionalUser, conn: DbConn) -> RouteR
       let mut bytes = [0; LEN];
 
       for file in files {
-        let mut f = file.as_output_file(false, &paste)?;
+        let mut f = file.as_output_file(false, &paste, None)?;
 
         // TODO: maybe store this in database or its own file?
         if !has_preview && file.is_binary() != Some(true) {

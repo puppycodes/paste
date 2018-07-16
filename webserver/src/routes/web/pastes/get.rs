@@ -7,18 +7,22 @@ use errors::*;
 use models::id::{PasteId, FileId};
 use models::paste::{Content, Visibility};
 use models::paste::output::{Output, OutputFile, OutputAuthor};
-use routes::web::{context, Rst, OptionalWebUser, Session};
+use routes::web::{context, Rst, OptionalWebUser, Password, Session};
 use utils::{external_links, Language};
 
 use ammonia::Builder;
 
+use chrono::Duration;
+
 use comrak::{markdown_to_html, ComrakOptions};
+
+use cookie::{Cookie, SameSite};
 
 use diesel::prelude::*;
 
 use percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 
-use rocket::http::Status as HttpStatus;
+use rocket::http::{Cookies, Status as HttpStatus};
 use rocket::response::Redirect;
 use rocket::State;
 
@@ -79,7 +83,7 @@ fn username_id(username: String, id: PasteId) -> Redirect {
 }
 
 #[get("/p/<username>/<id>")]
-fn users_username_id(username: String, id: PasteId, config: State<Config>, user: OptionalWebUser, mut sess: Session, conn: DbConn) -> Result<Rst> {
+fn users_username_id(username: String, id: PasteId, config: State<Config>, user: OptionalWebUser, mut pass: Password, mut sess: Session, mut cookies: Cookies, conn: DbConn) -> Result<Rst> {
   let paste: DbPaste = match id.get(&conn)? {
     Some(p) => p,
     None => return Ok(Rst::Status(HttpStatus::NotFound)),
@@ -101,10 +105,25 @@ fn users_username_id(username: String, id: PasteId, config: State<Config>, user:
     return Ok(Rst::Status(status));
   }
 
-  let get_content = paste.password().is_none();
+  {
+    let mut valid_pass = true;
+    if let Some(ref p) = *pass {
+      if !paste.check_password(p) {
+        cookies.remove_private(Cookie::named("password"));
+        sess.add_data("error", "Invalid password.");
+        valid_pass = false;
+      }
+    }
+    if !valid_pass {
+      pass = Password(None);
+    }
+  }
+
+  let get_content = pass.is_some() == paste.password().is_some();
+  let pass = pass.as_ref().map(|x| x.as_str());
   let files: Vec<OutputFile> = id.files(&conn)?
     .iter()
-    .map(|x| x.as_output_file(get_content, &paste))
+    .map(|x| x.as_output_file(get_content, &paste, pass))
     .collect::<result::Result<_, _>>()?;
 
   let mut rendered: HashMap<FileId, Option<String>> = HashMap::with_capacity(files.len());
@@ -149,16 +168,30 @@ fn users_username_id(username: String, id: PasteId, config: State<Config>, user:
 
   let author_name = output.author.as_ref().map(|x| x.username.to_string()).unwrap_or_else(|| "anonymous".into());
 
+  if let Some(ref p) = pass {
+    let cookie = Cookie::build("password", p.to_string())
+      .secure(true)
+      .http_only(true)
+      .same_site(SameSite::Strict)
+      .max_age(Duration::minutes(15))
+      .path(format!("/p/{}/{}", author_name, id.simple()))
+      .finish();
+      cookies.add_private(cookie);
+  }
+
   let mut ctx = context(&*config, user.as_ref(), &mut sess);
   ctx["paste"] = json!(output);
-  ctx["num_commits"] = json!(paste.num_commits()?);
+  ctx["encrypted"] = json!(paste.password().is_some());
+  if paste.password().is_none() {
+    ctx["num_commits"] = json!(paste.num_commits()?);
+  }
   ctx["rendered"] = json!(rendered);
   ctx["user"] = json!(*user);
   ctx["deletion_key"] = json!(sess.data.remove("deletion_key"));
   ctx["is_owner"] = json!(is_owner);
   ctx["author_name"] = json!(author_name);
 
-  if paste.password().is_some() {
+  if paste.password().is_some() && pass.is_none() {
     return Ok(Rst::Template(Template::render("paste/encrypted", ctx)));
   }
 
@@ -211,7 +244,7 @@ fn edit(username: String, id: PasteId, config: State<Config>, user: OptionalWebU
 
   let files: Vec<OutputFile> = id.files(&conn)?
     .iter()
-    .map(|x| x.as_output_file(true, &paste))
+    .map(|x| x.as_output_file(true, &paste, None))
     .collect::<result::Result<_, _>>()?;
 
   let output = Output::new(

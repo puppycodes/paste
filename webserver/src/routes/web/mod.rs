@@ -93,6 +93,30 @@ impl Deref for OptionalWebUser {
   }
 }
 
+#[derive(Debug)]
+pub struct Password(Option<String>);
+
+impl<'a, 'r> FromRequest<'a, 'r> for Password {
+  type Error = !;
+
+  fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
+    let pw = match request.cookies().get_private("password") {
+      Some(c) => Some(c.value().to_string()),
+      None => None,
+    };
+
+    Outcome::Success(Password(pw))
+  }
+}
+
+impl Deref for Password {
+  type Target = Option<String>;
+
+  fn deref(&self) -> &Self::Target {
+    &self.0
+  }
+}
+
 pub enum Rst {
   Redirect(Redirect),
   Status(HttpStatus),

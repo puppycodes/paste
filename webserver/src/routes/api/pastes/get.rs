@@ -94,7 +94,7 @@ fn _get(id: PasteId, query: Option<Query>, user: OptionalUser, conn: DbConn) -> 
   let full = query.full == Some(true);
   let files: Vec<OutputFile> = id.files(&conn)?
     .iter()
-    .map(|x| x.as_output_file(full, &paste))
+    .map(|x| x.as_output_file(full, &paste, None))
     .collect::<Result<_, _>>()?;
 
   let author = match paste.author_id() {

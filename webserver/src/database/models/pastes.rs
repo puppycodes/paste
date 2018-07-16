@@ -254,7 +254,7 @@ impl Paste {
     Ok(count)
   }
 
-  fn key(&self, password: &str) -> Option<Key> {
+  pub(crate) fn key(&self, password: &str) -> Option<Key> {
     let self_pass = self.password.as_ref()?;
     let salt = Salt::from_slice(&self_pass.as_bytes()[..pwhash::SALTBYTES])?;
     let mut key = Key([0; secretbox::KEYBYTES]);

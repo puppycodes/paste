@@ -1,4 +1,4 @@
-#![feature(plugin, custom_derive, macro_at_most_once_rep)]
+#![feature(plugin, custom_derive, macro_at_most_once_rep, never_type)]
 #![plugin(rocket_codegen)]
 
 extern crate ammonia;
@@ -157,6 +157,8 @@ fn main() {
       routes::web::pastes::get::edit,
 
       routes::web::pastes::post::post,
+
+      routes::web::pastes::password::post,
 
       routes::web::pastes::delete::delete,
       routes::web::pastes::patch::patch,

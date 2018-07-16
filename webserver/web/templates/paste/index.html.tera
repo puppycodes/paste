@@ -55,7 +55,7 @@ untitled paste
     <div class="paste container">
       <div class="right">
         <div class="field is-grouped">
-          {% if is_owner %}
+          {% if is_owner and not encrypted %}
           <div class="control">
             <a class="button is-info is-large" href="/p/{{ author_name | urlencode(safe="") }}/{{ paste.id }}/edit">
               <span class="icon is-large">
@@ -96,6 +96,9 @@ untitled paste
       {% set file_count = paste.files | length %}
       <div class="right paste info">
         <span>{{ paste.visibility }}</span>
+        {% if encrypted %}
+        <span>encrypted</span>
+        {% endif %}
         <span>{{ paste.files | length }} {% if file_count == 1 %}file{% else %}files{% endif %}</span>
         <span class="timestamp" data-timestamp="{{ paste.created_at }}"></span>
         {% if paste.expires %}
@@ -108,7 +111,9 @@ untitled paste
       <div class="left tabs">
         <ul>
           <li class="is-active"><a href="/p/{{ author_name | urlencode(safe="") }}/{{ paste.id }}">files</a></li>
+          {% if not encrypted %}
           <li><a href="/p/{{ author_name | urlencode(safe="") }}/{{ paste.id }}/revisions">revisions <span class="right tag">{{ num_commits }}</span></a></li>
+          {% endif %}
         </ul>
       </div>
     </div>

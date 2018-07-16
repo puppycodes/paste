@@ -11,6 +11,8 @@ use super::super::schema::files;
 
 use chrono::{NaiveDateTime, Utc};
 
+use sodiumoxide::crypto::secretbox::{self, Nonce};
+
 use std::fs::File as FsFile;
 use std::io::Read;
 use std::path::PathBuf;
@@ -60,9 +62,9 @@ impl File {
     &self.created_at
   }
 
-  pub fn as_output_file(&self, with_content: bool, paste: &Paste) -> Result<OutputFile> {
+  pub fn as_output_file(&self, with_content: bool, paste: &Paste, password: Option<&str>) -> Result<OutputFile> {
     let content = if with_content {
-      Some(self.read_content(paste)?)
+      Some(self.read_content(paste, password)?)
     } else {
       None
     };
@@ -74,10 +76,37 @@ impl File {
     paste.files_directory().join(self.id().simple().to_string())
   }
 
-  pub fn read_content(&self, paste: &Paste) -> Result<Content> {
+  fn decrypt(&self, paste: &Paste, password: &str) -> Result<Vec<u8>> {
+    let key = match paste.key(password) {
+      Some(k) => k,
+      None => bail!("could not create key"),
+    };
+
+    let encrypted_data = self.read_raw_content(paste)?;
+
+    let nonce = match Nonce::from_slice(&encrypted_data[..secretbox::NONCEBYTES]) {
+      Some(n) => n,
+      None => bail!("invalid nonce length"),
+    };
+    let data = &encrypted_data[secretbox::NONCEBYTES..];
+
+    secretbox::open(data, &nonce, &key)
+      .map_err(|_| format_err!("could not open secret box"))
+  }
+
+  fn read_raw_content(&self, paste: &Paste) -> Result<Vec<u8>> {
     let mut file = FsFile::open(self.path(paste))?;
     let mut data = Vec::new();
     file.read_to_end(&mut data)?;
+
+    Ok(data)
+  }
+
+  pub fn read_content(&self, paste: &Paste, password: Option<&str>) -> Result<Content> {
+    let data = match password {
+      Some(ref p) => self.decrypt(paste, p)?,
+      None => self.read_raw_content(paste)?,
+    };
 
     if self.is_binary() == Some(true) {
       Ok(Content::Base64(data))
