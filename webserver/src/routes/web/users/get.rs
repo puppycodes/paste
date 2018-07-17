@@ -94,7 +94,7 @@ fn _get(page: u32, username: String, config: State<Config>, user: OptionalWebUse
         let mut f = file.as_output_file(false, &paste, None)?;
 
         // TODO: maybe store this in database or its own file?
-        if !has_preview && file.is_binary() != Some(true) {
+        if !has_preview && file.is_binary() != Some(true) && paste.password().is_none() {
           let path = file.path(&paste);
           let read = File::open(path)?.read(&mut bytes)?;
           let full = read < LEN;

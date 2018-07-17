@@ -126,7 +126,7 @@ Edit untitled paste
         </div>
       </div>
       <div class="column is-narrow">
-        <div class="field is-grouped">
+        <div class="field">
           <div class="control has-icons-left">
             <label class="label">Visibility</label>
             <div class="select is-fullwidth">
@@ -151,6 +151,8 @@ Edit untitled paste
               </span>
             </div>
           </div>
+        </div>
+        <div class="field">
           <div class="control requires-js">
             <div class="label-icon">
               <label class="label">Expires</label>
@@ -173,20 +175,6 @@ Edit untitled paste
                   <i class="fas fa-stopwatch"></i>
                 </span>
               </div>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <div class="control has-icons-left requires-js">
-            <label class="label">Encrypted</label>
-            <div class="select is-fullwidth" id="encrypted">
-              <select>
-                <option value="no" selected>no</option>
-                <option value="yes">yes</option>
-              </select>
-              <span class="icon is-small is-left">
-                <i class="fas fa-lock"></i>
-              </span>
             </div>
           </div>
         </div>

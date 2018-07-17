@@ -226,6 +226,15 @@ fn edit(username: String, id: PasteId, config: State<Config>, user: OptionalWebU
     return Ok(Rst::Status(status));
   }
 
+  if paste.password().is_some() {
+    sess.add_data("error", "Editing encrypted pastes is not yet supported.");
+    return Ok(Rst::Redirect(Redirect::to(&format!(
+      "/p/{}/{}",
+      expected_username,
+      id.simple(),
+    ))));
+  }
+
   match paste.author_id() {
     Some(author) => if author != user.id() {
       if paste.visibility() == Visibility::Private {

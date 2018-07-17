@@ -169,10 +169,7 @@ table.is-middle td, table.is-middle th {
 }
 
 .box pre.file-source {
-  margin-left: -1.25rem;
-  margin-right: -1.25rem;
-  margin-bottom: -1.25rem;
-  margin-top: -1.5rem;
+  margin: -1.25rem;
   border-radius: 0 0 $radius-large $radius-large;
   white-space: pre-wrap;
 }
@@ -184,7 +181,7 @@ table.is-middle td, table.is-middle th {
   white-space: pre-wrap;
 
   &:first-child {
-    margin-top: -1.5rem;
+    margin-top: -1.25rem;
   }
 
   &:last-child {
@@ -202,7 +199,7 @@ table.is-middle td, table.is-middle th {
   margin-left: -1.25rem;
   margin-top: -1.25rem;
   margin-right: -1.25rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 
   border-radius: $radius-large $radius-large 0 0;
   box-shadow: inset 0 -2px 0 0 $grey;
@@ -281,12 +278,20 @@ th, td {
   display: flex;
 
   &:first-child {
-    margin-top: -1.5rem;
+    margin-top: -1.25rem;
   }
 }
 
 #paste_upload .columns .column {
   padding-bottom: 0;
+}
+
+.is-growable {
+  flex-grow: 1;
+}
+
+.is-fullwidth {
+  width: 100%;
 }
 
 .label-icon {

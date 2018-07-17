@@ -11,6 +11,7 @@ pub struct Output {
   pub author: Option<OutputAuthor>,
   #[serde(flatten)]
   pub paste: Paste,
+  pub encrypted: bool,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub deletion_key: Option<DeletionKeyId>,
   pub files: Vec<OutputFile>,
@@ -37,6 +38,7 @@ impl Output {
     Output {
       id: paste_id,
       author,
+      encrypted: password.is_some(),
       paste: Paste {
         metadata: Metadata {
           name: name.map(|x| x.as_ref().to_string().into()),

@@ -13,6 +13,7 @@ use diesel::prelude::*;
 use git2::{Repository, DiffFormat, Oid, Commit, Tree};
 
 use rocket::http::Status as HttpStatus;
+use rocket::response::Redirect;
 use rocket::State;
 
 use rocket_contrib::Template;
@@ -40,6 +41,15 @@ fn get(username: String, id: PasteId, config: State<Config>, user: OptionalWebUs
 
   if let Some((status, _)) = paste.check_access(user.as_ref().map(|x| x.id())) {
     return Ok(Rst::Status(status));
+  }
+
+  if paste.password().is_some() {
+    sess.add_data("error", "Revisions for encrypted pastes are not yet supported.");
+    return Ok(Rst::Redirect(Redirect::to(&format!(
+      "/p/{}/{}",
+      expected_username,
+      id.simple(),
+    ))));
   }
 
   let files: Vec<OutputFile> = id.files(&conn)?

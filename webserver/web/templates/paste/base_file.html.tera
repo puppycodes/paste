@@ -9,30 +9,32 @@
         type="text"
         placeholder="File name with extension"/>
     </div>
-    <div class="field is-grouped">
-      <div class="control has-icons-left">
-        <div class="select">
-          <select name="file_language">
-            <optgroup label="Highlight language">
-              <option label="auto" selected></option>
-            </optgroup>
-            <optgroup>
-              {% for lang in languages %}
-              <option value="{{ lang.0 }}">{{ lang.1 }}</option>
-              {% endfor %}
-            </optgroup>
-          </select>
-          <span class="icon is-small is-left">
-            <i class="fas fa-code"></i>
-          </span>
+    <div class="control">
+      <div class="field is-grouped">
+        <div class="control has-icons-left">
+          <div class="select">
+            <select name="file_language">
+              <optgroup label="Highlight language">
+                <option label="auto" selected></option>
+              </optgroup>
+              <optgroup>
+                {% for lang in languages %}
+                <option value="{{ lang.0 }}">{{ lang.1 }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
+            <span class="icon is-small is-left">
+              <i class="fas fa-code"></i>
+            </span>
+          </div>
         </div>
-      </div>
-      <div class="requires-js control">
-        <button name="delete_button" type="button" class="button is-danger">
-          <span class="icon">
-            <i class="fas fa-trash-alt"></i>
-          </span>
-        </button>
+        <div class="requires-js control">
+          <button name="delete_button" type="button" class="button is-danger">
+            <span class="icon">
+              <i class="fas fa-trash-alt"></i>
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
